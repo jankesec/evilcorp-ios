@@ -1,11 +1,11 @@
 # EvilCorp iOS
 
-**Intentionally vulnerable iOS application for mobile security training — 25 challenges across OWASP MASVS categories.**
+**Intentionally vulnerable iOS application for mobile security training — 30 challenges across OWASP MASVS categories.**
 
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange?style=flat&logo=swift)](https://swift.org)
 [![iOS](https://img.shields.io/badge/iOS-16%2B-black?style=flat&logo=apple)](https://apple.com/ios)
 [![License](https://img.shields.io/badge/license-GPLv3-blue?style=flat)](LICENSE)
-[![Challenges](https://img.shields.io/badge/challenges-25-green?style=flat)]()
+[![Challenges](https://img.shields.io/badge/challenges-30-green?style=flat)]()
 [![Size](https://img.shields.io/badge/binary-3.1MB%20arm64-lightgrey?style=flat)]()
 
 EvilCorp is an intentionally vulnerable iOS application built for **mobile security training**. Each of the **27 challenges** maps to real-world vulnerability classes (CWE), OWASP MASVS requirements, and MASWE weaknesses — making it a hands-on lab for practicing iOS penetration testing, reverse engineering, and dynamic instrumentation with Frida.
