@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>EvilCorp</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.evilcorp.ios</string>
+	<key>CFBundleName</key>
+	<string>EvilCorp</string>
+	<key>CFBundleDisplayName</key>
+	<string>EvilCorp</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array><string>arm64</string></array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array><string>UIInterfaceOrientationPortrait</string></array>
+	<key>NSAppTransportSecurity</key>
+	<dict><key>NSAllowsArbitraryLoads</key><true/></dict>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>EvilCorp requires Face ID for secure vault access</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.evilcorp.ios</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>evilcorp</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array><string>cydia</string><string>sileo</string><string>zbra</string></array>
+</dict>
+</plist>
