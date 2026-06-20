@@ -18,18 +18,18 @@ The app features a modern SwiftUI interface with progress tracking, CTF mode, li
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                   EvilCorp iOS                        │
-├────────────┬────────────┬────────────┬───────────────┤
-│  Home      │  Labs      │  MASVS     │  Console      │
+│                   EvilCorp iOS                       │
+├────────────┬────────────┬─────────────┬──────────────┤
+│  Home      │  Labs      │  MASVS      │  Console     │
 │  · Stats   │  · Search  │  · Checklist│ · Live logs  │
 │  · CTF     │  · Filter  │  · Coverage │ · Filter     │
 │  · Cards   │  · Tags    │  · Gaps     │ · Auto-scroll│
-├────────────┴────────────┴────────────┴───────────────┤
-│              Challenge Detail (per vuln)              │
+├────────────┴────────────┴─────────────┴──────────────┤
+│              Challenge Detail (per vuln)             │
 │    Lab  │  Hints (3 levels)  │  Frida Script         │
 ├──────────────────────────────────────────────────────┤
 │  25 self-contained SwiftUI views + 5 service files   │
-│  arm64 · 3.1 MB · parse-as-library · iOS 16+        │
+│  arm64 · 3.1 MB · parse-as-library · iOS 16+         │
 └──────────────────────────────────────────────────────┘
 ```
 
