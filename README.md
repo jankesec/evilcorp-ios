@@ -8,7 +8,7 @@
 [![Challenges](https://img.shields.io/badge/challenges-30-green?style=flat)]()
 [![Size](https://img.shields.io/badge/binary-3.1MB%20arm64-lightgrey?style=flat)]()
 
-EvilCorp is an intentionally vulnerable iOS application built for **mobile security training**. Each of the **27 challenges** maps to real-world vulnerability classes (CWE), OWASP MASVS requirements, and MASWE weaknesses — making it a hands-on lab for practicing iOS penetration testing, reverse engineering, and dynamic instrumentation with Frida.
+EvilCorp is an intentionally vulnerable iOS application built for **mobile security training**. Each of the **30 challenges** maps to real-world vulnerability classes (CWE), OWASP MASVS requirements, and MASWE weaknesses — making it a hands-on lab for practicing iOS penetration testing, reverse engineering, and dynamic instrumentation with Frida.
 
 The app features a modern SwiftUI interface with progress tracking, CTF mode, live console, per-challenge Frida scripts, and a multi-tab local data storage explorer — all in a single 3.3 MB arm64 binary.
 
