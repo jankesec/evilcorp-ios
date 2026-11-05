@@ -1,0 +1,45 @@
+name: EvilCorp
+
+options:
+  bundleIdPrefix: com.jankesec
+  deploymentTarget:
+    iOS: "16.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.1.0"
+    CURRENT_PROJECT_VERSION: "2"
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  EvilCorp:
+    type: application
+    platform: iOS
+    sources:
+      - path: EvilCorp
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.evilcorp.ios
+        PRODUCT_NAME: EvilCorp
+        INFOPLIST_FILE: EvilCorp/Info.plist
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MACCATALYST: false
+    scheme:
+      testTargets:
+        - EvilCorpTests
+
+  EvilCorpTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: EvilCorpTests
+    dependencies:
+      - target: EvilCorp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.evilcorp.ios.tests
+        GENERATE_INFOPLIST_FILE: true

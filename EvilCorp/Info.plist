@@ -28,6 +28,16 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>EvilCorp requires Face ID for secure vault access</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Training lab demonstration of excessive camera permission requests.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Training lab demonstration of excessive microphone permission requests.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Training lab demonstration of excessive contacts access.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Training lab demonstration of excessive photo library access.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Training lab demonstration of excessive location access.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
