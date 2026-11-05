@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: make project
+      - name: Validate challenge catalog
+        run: make catalog-check
+      - name: Type-check Swift sources
+        run: make typecheck
+      - name: Compile app and tests for iOS Simulator
+        run: make test-build

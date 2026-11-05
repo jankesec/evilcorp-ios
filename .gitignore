@@ -21,6 +21,8 @@ DerivedData/
 .build/
 Packages/
 *.xcodeproj
+!EvilCorp.xcodeproj/
+!EvilCorp.xcodeproj/**
 
 # CocoaPods
 Pods/
