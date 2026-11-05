@@ -103,6 +103,17 @@ generic iOS Simulator destination. To run tests on an installed simulator:
 make test DESTINATION='platform=iOS Simulator,name=iPhone 16 Pro'
 ```
 
+## Releases
+
+GitHub releases include a source archive, SHA-256 manifest, and an unsigned IPA for
+authorized lab use. The IPA is not ready for direct installation: sign it with your own
+development identity and use only a dedicated test device. Release assets are reproducible
+locally with:
+
+```bash
+make release-artifacts VERSION=v1.1.0
+```
+
 ## Training workflow
 
 1. Pick a challenge from Labs or the MASVS coverage view.
