@@ -3,7 +3,7 @@
 All notable changes to EvilCorp iOS are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## [1.1.0] - 2026-11-06
 
 ### Added
 
@@ -31,3 +31,4 @@ All notable changes to EvilCorp iOS are documented here. The project follows
 - Initial public release.
 
 [1.0.0]: https://github.com/jankesec/evilcorp-ios/releases/tag/v1.0.0
+[1.1.0]: https://github.com/jankesec/evilcorp-ios/releases/tag/v1.1.0

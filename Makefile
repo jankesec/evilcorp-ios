@@ -1,4 +1,4 @@
-.PHONY: build catalog-check check format project test test-build typecheck
+.PHONY: build catalog-check check format project release-artifacts test test-build typecheck
 
 PROJECT := EvilCorp.xcodeproj
 SCHEME := EvilCorp
@@ -24,6 +24,9 @@ build: project
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 		-destination 'generic/platform=iOS Simulator' \
 		CODE_SIGNING_ALLOWED=NO build
+
+release-artifacts:
+	VERSION=$(VERSION) ./scripts/build_release.sh
 
 test: project
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \

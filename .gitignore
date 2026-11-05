@@ -29,6 +29,7 @@ Pods/
 
 # Build artifacts
 build/
+/dist/
 *.app
 *.ipa
 *.dylib
