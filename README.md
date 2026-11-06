@@ -8,7 +8,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5-orange?style=flat-square&logo=swift)](https://swift.org/)
 [![iOS](https://img.shields.io/badge/iOS-16%2B-111?style=flat-square&logo=apple)](https://developer.apple.com/ios/)
 [![Challenges](https://img.shields.io/badge/challenges-30-42d77d?style=flat-square)](#challenge-catalog)
-[![License](https://img.shields.io/badge/license-GPL--3.0--or--later-111?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-111?style=flat-square)](LICENSE)
 
 Thirty self-contained labs mapped to CWE, OWASP MASVS, and MASWE, with progressive
 hints, CTF scoring, local progress tracking, and per-challenge Frida examples.
@@ -111,7 +111,7 @@ development identity and use only a dedicated test device. Release assets are re
 locally with:
 
 ```bash
-make release-artifacts VERSION=v1.1.0
+make release-artifacts VERSION=v1.1.1
 ```
 
 ## Training workflow
@@ -209,4 +209,4 @@ security issues outside the intentionally vulnerable scope should follow [SECURI
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
