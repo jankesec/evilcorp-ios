@@ -3,6 +3,13 @@
 All notable changes to EvilCorp iOS are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-11-06
+
+### Changed
+
+- Relicensed the project from GPL-3.0-or-later to the MIT License.
+- Updated release metadata and documentation for the license change.
+
 ## [1.1.0] - 2026-11-06
 
 ### Added
@@ -32,3 +39,4 @@ All notable changes to EvilCorp iOS are documented here. The project follows
 
 [1.0.0]: https://github.com/jankesec/evilcorp-ios/releases/tag/v1.0.0
 [1.1.0]: https://github.com/jankesec/evilcorp-ios/releases/tag/v1.1.0
+[1.1.1]: https://github.com/jankesec/evilcorp-ios/releases/tag/v1.1.1
