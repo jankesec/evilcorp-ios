@@ -12,6 +12,7 @@
 
 Thirty self-contained labs mapped to CWE, OWASP MASVS, and MASWE, with progressive
 hints, CTF scoring, local progress tracking, and per-challenge Frida examples.
+The iOS companion to [evilcorp-android](https://github.com/jankesec/evilcorp-android).
 
 </div>
 
@@ -207,6 +208,23 @@ test device without personal accounts or data and document the exact environment
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing challenge behavior. Repository-level
 security issues outside the intentionally vulnerable scope should follow [SECURITY.md](SECURITY.md).
 
+## Author
+
+```text
+Author          : Sevban Dönmez (@jankesec)
+Role            : Senior Cyber Security Consultant · Red Team & Offensive Security Researcher
+Research Portal : https://jankesec.com
+GitHub          : https://github.com/jankesec
+PGP Fingerprint : FF0A 7D83 6751 CCE3 F9CC F574 FCF8 39FB 7F00 4626
+GPG Key ID      : 5FDB257F4AAE8C3F
+```
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+<p align="center">
+  <a href="https://buymeacoffee.com/sevbandonmez">
+    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-sevbandonmez-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy Me A Coffee">
+  </a>
+</p>
