@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MoreTabView: View {
-  @ObservedObject var progress = ChallengeProgress()
+  @ObservedObject var progress: ChallengeProgress
   @State private var showResetAlert = false
   @State private var selectedSection = 0
 
@@ -22,14 +22,7 @@ struct MoreTabView: View {
     .background(EC.bg)
     .alert("Reset All Progress", isPresented: $showResetAlert) {
       Button("Cancel", role: .cancel) {}
-      Button("Reset", role: .destructive) {
-        progress.completed.removeAll()
-        progress.bookmarks.removeAll()
-        progress.ctfScore = 0
-        progress.ctfMode = false
-        UserDefaults.standard.removeObject(forKey: "evilcorp_completed")
-        UserDefaults.standard.removeObject(forKey: "evilcorp_bookmarks")
-      }
+      Button("Reset", role: .destructive) { progress.resetAll() }
     } message: {
       Text(
         "This will clear all completed challenges, bookmarks, and CTF progress. This cannot be undone."
@@ -206,12 +199,10 @@ struct SettingsView: View {
         }
 
         SettingsRow(
-          icon: "link", title: "GitHub Repository", subtitle: "github.com/byjanke/evilcorp-ios",
+          icon: "link", title: "GitHub Repository", subtitle: AppMetadata.repositoryDisplayName,
           color: .white
         ) {
-          if let url = URL(string: "https://github.com/byjanke/evilcorp-ios") {
-            UIApplication.shared.open(url)
-          }
+          UIApplication.shared.open(AppMetadata.repositoryURL)
         }
 
         SettingsRow(
@@ -219,7 +210,7 @@ struct SettingsView: View {
           color: .blue
         ) {
           let text =
-            "Check out EvilCorp iOS — 27 vulnerable iOS challenges for security training: https://github.com/byjanke/evilcorp-ios"
+            "Check out EvilCorp iOS — \(AppMetadata.challengeCount) vulnerable iOS challenges for security training: \(AppMetadata.repositoryURL.absoluteString)"
           let av = UIActivityViewController(activityItems: [text], applicationActivities: nil)
           if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
             let root = scene.windows.first?.rootViewController
@@ -229,7 +220,8 @@ struct SettingsView: View {
         }
 
         SettingsRow(
-          icon: "info.circle", title: "Version", subtitle: "v1.0 · 27 Challenges · 3.3 MB",
+          icon: "info.circle", title: "Version",
+          subtitle: "v\(AppMetadata.version) · \(AppMetadata.challengeCount) Challenges",
           color: .gray
         ) {}
 

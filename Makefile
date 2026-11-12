@@ -2,7 +2,7 @@
 
 PROJECT := EvilCorp.xcodeproj
 SCHEME := EvilCorp
-DESTINATION := platform=iOS Simulator,name=iPhone 17 Pro
+DESTINATION ?= $(shell ./scripts/simulator_destination.sh)
 
 project:
 	xcodegen generate

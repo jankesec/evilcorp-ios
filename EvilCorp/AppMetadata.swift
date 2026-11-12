@@ -3,6 +3,10 @@ import Foundation
 enum AppMetadata {
   static let name = "EvilCorp"
   static let trainingPurpose = "Intentionally vulnerable mobile security laboratory"
+  static let repositoryURL = URL(string: "https://github.com/jankesec/evilcorp-ios")!
+  static var repositoryDisplayName: String {
+    (repositoryURL.host ?? "") + repositoryURL.path
+  }
 
   static var challengeCount: Int { EvilCorpChallenge.all.count }
   static var categoryCount: Int { Set(EvilCorpChallenge.all.map(\.category)).count }

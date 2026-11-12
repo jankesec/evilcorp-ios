@@ -70,7 +70,7 @@ struct OnboardingView: View {
               ).padding(.horizontal, 32)
             }.tag(i)
           }
-        }.tabViewStyle(.page)
+        }.tabViewStyle(.page(indexDisplayMode: .never))
 
         HStack(spacing: 8) {
           ForEach(0..<pages.count, id: \.self) { i in
@@ -78,7 +78,15 @@ struct OnboardingView: View {
           }
         }
 
-        Button(action: { withAnimation { showOnboarding = false } }) {
+        Button(action: {
+          withAnimation {
+            if page < pages.count - 1 {
+              page += 1
+            } else {
+              showOnboarding = false
+            }
+          }
+        }) {
           Text(page < pages.count - 1 ? "Next" : "Get Started")
             .font(.system(size: 15, weight: .semibold)).foregroundColor(.black)
             .padding(.horizontal, 40).padding(.vertical, 12)
@@ -160,7 +168,10 @@ struct SwipeableChallengeView: View {
       }.padding(.horizontal).padding(.vertical, 8)
 
       HStack(spacing: 16) {
-        Button(action: { withAnimation { progress.toggle(challenge.id) } }) {
+        Button(action: {
+          UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+          withAnimation { progress.toggle(challenge.id) }
+        }) {
           HStack(spacing: 4) {
             Image(
               systemName: progress.isCompleted(challenge.id)
@@ -217,41 +228,7 @@ struct SwipeableChallengeView: View {
     }.background(EC.bg)
   }
 
-  @ViewBuilder var labView: some View {
-    switch challenge.id {
-    case "userdefaults": UserDefaultsChallengeView()
-    case "keychain": KeychainChallengeView()
-    case "plist": PlistChallengeView()
-    case "sqlite": SQLiteChallengeView()
-    case "jailbreak": JailbreakChallengeView()
-    case "sslpinning": SSLPinningChallengeView()
-    case "webviewxss": WebViewXSSChallengeView()
-    case "logging": LoggingChallengeView()
-    case "hardcodedsecrets": HardcodedSecretsChallengeView()
-    case "biometricbypass": BiometricBypassChallengeView()
-    case "cryptography": CryptoChallengeView()
-    case "network": NetworkChallengeView()
-    case "urlscheme": URLSchemeChallengeView()
-    case "screenshot": ScreenshotLeakChallengeView()
-    case "antidebug": AntiDebugChallengeView()
-    case "pasteboard": PasteboardChallengeView()
-    case "filesharing": FileSharingChallengeView()
-    case "keyboard": KeyboardCacheChallengeView()
-    case "binarypatch": BinaryPatchingChallengeView()
-    case "pinbruteforce": PinBruteforceView()
-    case "urlcache": URLCacheChallengeView()
-    case "excessiveperms": ExcessivePermsChallengeView()
-    case "phishing": PhishingChallengeView()
-    case "memorysensitive": MemorySensitiveChallengeView()
-    case "xpc": XPCChallengeView()
-    case "localdata": LocalDataStorageView()
-    case "randomgen": RandomGenChallengeView()
-    case "pathtraversal": PathTraversalChallengeView()
-    case "bgfetch": BackgroundFetchChallengeView()
-    case "deviceinfo": DeviceInfoView()
-    default: Text("...").foregroundColor(.gray)
-    }
-  }
+  var labView: some View { LabRegistry.view(for: challenge.id) }
 
   var hintsScrollView: some View {
     ScrollView {

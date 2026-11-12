@@ -2,51 +2,113 @@ import Combine
 import SwiftUI
 import UIKit
 
-class ChallengeProgress: ObservableObject {
-  @Published var completed: Set<String> = []
-  @Published var bookmarks: Set<String> = []
-  @Published var ctfMode = false
-  @Published var ctfStart: Date? = nil
-  @Published var ctfScore = 0
-  private let key = "evilcorp_completed"
-  private var bKey: String { "evilcorp_bookmarks" }
-  init() {
-    completed = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
-    bookmarks = Set(UserDefaults.standard.stringArray(forKey: bKey) ?? [])
+/// Single source of truth for training progress, bookmarks, and the CTF session.
+///
+/// One instance is created by `ContentView` and shared with every screen, so a reset from
+/// Settings is immediately visible everywhere. All state is persisted, including an active CTF
+/// session, so relaunching the app does not lose the timer or the score.
+final class ChallengeProgress: ObservableObject {
+  @Published private(set) var completed: Set<String> = []
+  @Published private(set) var bookmarks: Set<String> = []
+  @Published private(set) var ctfStart: Date? = nil
+  /// Challenges solved while the current CTF session was running.
+  @Published private(set) var ctfSolved: Set<String> = []
+
+  private let defaults: UserDefaults
+
+  enum Keys {
+    static let completed = "evilcorp_completed"
+    static let bookmarks = "evilcorp_bookmarks"
+    static let ctfStart = "evilcorp_ctf_start"
+    static let ctfSolved = "evilcorp_ctf_solved"
   }
+
+  init(defaults: UserDefaults = .standard) {
+    self.defaults = defaults
+    let validIDs = Set(EvilCorpChallenge.all.map(\.id))
+    completed = Set(defaults.stringArray(forKey: Keys.completed) ?? []).intersection(validIDs)
+    bookmarks = Set(defaults.stringArray(forKey: Keys.bookmarks) ?? []).intersection(validIDs)
+    ctfStart = defaults.object(forKey: Keys.ctfStart) as? Date
+    if ctfStart != nil {
+      ctfSolved = Set(defaults.stringArray(forKey: Keys.ctfSolved) ?? []).intersection(completed)
+    }
+  }
+
+  var ctfMode: Bool { ctfStart != nil }
+
+  /// Score of the running CTF session. It is derived from the set of solved challenges, so
+  /// toggling a challenge off and on again can never add its points twice.
+  var ctfScore: Int { ctfSolved.reduce(0) { $0 + AppMetadata.points(for: $1) } }
+
+  func isCompleted(_ id: String) -> Bool { completed.contains(id) }
+  func isBookmarked(_ id: String) -> Bool { bookmarks.contains(id) }
+
   func toggle(_ id: String) {
     if completed.contains(id) {
       completed.remove(id)
+      ctfSolved.remove(id)
     } else {
       completed.insert(id)
-      if ctfMode { ctfScore += AppMetadata.points(for: id) }
+      if ctfMode { ctfSolved.insert(id) }
     }
-    UserDefaults.standard.set(Array(completed), forKey: key)
-    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    save()
   }
-  func isCompleted(_ id: String) -> Bool { completed.contains(id) }
-  func resetCTF() {
-    ctfStart = Date()
-    ctfScore = 0
-  }
-  func stopCTF() {
-    ctfMode = false
-    ctfStart = nil
-  }
+
   func toggleBookmark(_ id: String) {
     if bookmarks.contains(id) { bookmarks.remove(id) } else { bookmarks.insert(id) }
-    UserDefaults.standard.set(Array(bookmarks), forKey: bKey)
+    save()
   }
-  func isBookmarked(_ id: String) -> Bool { bookmarks.contains(id) }
+
+  func startCTF(at date: Date = Date()) {
+    ctfStart = date
+    ctfSolved = []
+    save()
+  }
+
+  func stopCTF() {
+    ctfStart = nil
+    ctfSolved = []
+    save()
+  }
+
+  /// Clears completions, bookmarks, and any running CTF session.
+  func resetAll() {
+    completed = []
+    bookmarks = []
+    ctfStart = nil
+    ctfSolved = []
+    save()
+  }
+
   func categoryCompleted(_ cat: String) -> Bool {
     let all = EvilCorpChallenge.all.filter { $0.category == cat }
     return !all.isEmpty && all.allSatisfy { completed.contains($0.id) }
   }
+
+  private func save() {
+    defaults.set(Array(completed).sorted(), forKey: Keys.completed)
+    defaults.set(Array(bookmarks).sorted(), forKey: Keys.bookmarks)
+    if let ctfStart {
+      defaults.set(ctfStart, forKey: Keys.ctfStart)
+      defaults.set(Array(ctfSolved).sorted(), forKey: Keys.ctfSolved)
+    } else {
+      defaults.removeObject(forKey: Keys.ctfStart)
+      defaults.removeObject(forKey: Keys.ctfSolved)
+    }
+  }
 }
 
-class LogStore: ObservableObject {
-  @Published var entries: [String] = []
+struct LogEntry: Identifiable, Equatable {
+  let id = UUID()
+  let message: String
+}
+
+final class LogStore: ObservableObject {
   static let shared = LogStore()
+  static let maxEntries = 200
+
+  @Published private(set) var entries: [LogEntry] = []
+
   init() {
     entries = [
       "[EVILCORP] v\(AppMetadata.version) started · PID: \(getpid())",
@@ -54,14 +116,18 @@ class LogStore: ObservableObject {
       "[EVILCORP] ATS disabled · FileSharing enabled · URL scheme registered",
       "[INFO] Tap challenges to see live logs here",
       "[INFO] Challenge actions log credentials/data to this console",
-    ]
+    ].map { LogEntry(message: $0) }
   }
+
   func append(_ msg: String) {
     DispatchQueue.main.async {
-      self.entries.append(msg)
-      if self.entries.count > 200 { self.entries.removeFirst(100) }
+      self.entries.append(LogEntry(message: msg))
+      let overflow = self.entries.count - Self.maxEntries
+      if overflow > 0 { self.entries.removeFirst(overflow) }
     }
   }
+
+  func clear() { entries = [] }
 }
 
 struct ContentView: View {
@@ -88,7 +154,15 @@ struct ContentView: View {
         }
       )
     } else {
-      ZStack {
+      // The CTF banner sits above the tabs instead of floating over them, so it never covers
+      // screen content such as the home header.
+      VStack(spacing: 0) {
+        if progress.ctfMode {
+          CTFBannerView(progress: progress)
+            .padding(.vertical, 4)
+            .background(EC.background)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
         TabView(selection: $tab) {
           HomeTabView(selectedChallenge: $challenge, progress: progress).tabItem {
             Label("Home", systemImage: "house.fill")
@@ -102,15 +176,13 @@ struct ContentView: View {
           }.tag(3)
           ConsoleTabView(log: log).tabItem { Label("Console", systemImage: "terminal.fill") }.tag(4)
           DeviceInfoView().tabItem { Label("Device", systemImage: "iphone.gen3") }.tag(5)
-          MoreTabView().tabItem { Label("Extras", systemImage: "ellipsis.circle.fill") }.tag(6)
+          MoreTabView(progress: progress).tabItem {
+            Label("Extras", systemImage: "ellipsis.circle.fill")
+          }.tag(6)
         }.tint(.white).preferredColorScheme(.dark)
-        if progress.ctfMode {
-          VStack {
-            CTFBannerView(progress: progress).padding(.top, 50)
-            Spacer()
-          }
-        }
       }
+      .background(EC.background.ignoresSafeArea())
+      .animation(.easeInOut(duration: 0.25), value: progress.ctfMode)
       .sheet(isPresented: $showOnboarding) { OnboardingView(showOnboarding: $showOnboarding) }
       .onAppear {
         if !onboardingDone {
@@ -195,145 +267,22 @@ struct CTFBannerView: View {
   }
 }
 
-struct DetailView: View {
-  let challenge: EvilCorpChallenge
-  @ObservedObject var progress: ChallengeProgress
-  let onBack: () -> Void
-  @State private var section = 0
-  @State private var hintLevel = 0
-  var body: some View {
-    VStack(spacing: 0) {
-      HStack {
-        Button(action: onBack) {
-          Image(systemName: "chevron.left").font(.title3).foregroundColor(.white)
-        }
-        Spacer()
-        VStack(spacing: 2) {
-          Text(challenge.title).font(.headline).foregroundColor(.white)
-          HStack(spacing: 6) {
-            BadgeView(challenge.cwe)
-            BadgeView(challenge.masvs)
-            BadgeView(challenge.maswe, color: .cyan)
-            BadgeView(challenge.cvss, color: .yellow)
-            BadgeView(challenge.difficulty, color: .orange)
-          }
-        }
-        Spacer()
-        Button(action: { withAnimation { progress.toggle(challenge.id) } }) {
-          ZStack {
-            Circle().fill(
-              progress.isCompleted(challenge.id)
-                ? Color.green.opacity(0.2) : Color.gray.opacity(0.1)
-            ).frame(width: 36, height: 36)
-            Image(
-              systemName: progress.isCompleted(challenge.id)
-                ? "checkmark.seal.fill" : "checkmark.seal"
-            ).foregroundColor(progress.isCompleted(challenge.id) ? .green : .gray)
-          }
-        }
-      }.padding(.horizontal).padding(.vertical, 10).background(EC.card)
-      Picker("", selection: $section) {
-        Text("Lab").tag(0)
-        Text("Hints").tag(1)
-        Text("Frida").tag(2)
-      }.pickerStyle(.segmented).padding(.horizontal).padding(.vertical, 6)
-      TabView(selection: $section) {
-        labView.tag(0)
-        hintsView.tag(1)
-        fridaView.tag(2)
-      }.tabViewStyle(.page(indexDisplayMode: .never))
-    }.background(EC.bg)
-  }
-  @ViewBuilder var labView: some View {
-    switch challenge.id {
-    case "userdefaults": UserDefaultsChallengeView()
-    case "keychain": KeychainChallengeView()
-    case "plist": PlistChallengeView()
-    case "sqlite": SQLiteChallengeView()
-    case "jailbreak": JailbreakChallengeView()
-    case "sslpinning": SSLPinningChallengeView()
-    case "webviewxss": WebViewXSSChallengeView()
-    case "logging": LoggingChallengeView()
-    case "hardcodedsecrets": HardcodedSecretsChallengeView()
-    case "biometricbypass": BiometricBypassChallengeView()
-    case "cryptography": CryptoChallengeView()
-    case "network": NetworkChallengeView()
-    case "urlscheme": URLSchemeChallengeView()
-    case "screenshot": ScreenshotLeakChallengeView()
-    case "antidebug": AntiDebugChallengeView()
-    case "pasteboard": PasteboardChallengeView()
-    case "filesharing": FileSharingChallengeView()
-    case "keyboard": KeyboardCacheChallengeView()
-    case "binarypatch": BinaryPatchingChallengeView()
-    case "pinbruteforce": PinBruteforceView()
-    case "urlcache": URLCacheChallengeView()
-    case "excessiveperms": ExcessivePermsChallengeView()
-    case "phishing": PhishingChallengeView()
-    case "memorysensitive": MemorySensitiveChallengeView()
-    case "xpc": XPCChallengeView()
-    case "randomgen": RandomGenChallengeView()
-    case "pathtraversal": PathTraversalChallengeView()
-    case "bgfetch": BackgroundFetchChallengeView()
-    case "deviceinfo": DeviceInfoView()
-    case "localdata": LocalDataStorageView()
-    default: Text("...").foregroundColor(.gray)
-    }
-  }
-  var hintsView: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
-        Text("Hints").font(.title2).fontWeight(.bold).foregroundColor(.white)
-        ForEach(0..<min(hintLevel + 1, challenge.hints.count), id: \.self) { i in
-          VStack(alignment: .leading, spacing: 8) {
-            Text("Hint \(i+1)").font(.caption).fontWeight(.bold).foregroundColor(.orange).padding(
-              .horizontal, 6
-            ).padding(.vertical, 2).background(Color.orange.opacity(0.15)).cornerRadius(4)
-            Text(challenge.hints[i]).font(.subheadline).foregroundColor(.white).padding().frame(
-              maxWidth: .infinity, alignment: .leading
-            ).background(Color.white.opacity(0.04)).cornerRadius(10)
-          }
-        }
-        if hintLevel < challenge.hints.count - 1 {
-          Button {
-            withAnimation { hintLevel += 1 }
-          } label: {
-            HStack {
-              Image(systemName: "lightbulb.fill").foregroundColor(.yellow)
-              Text("Reveal Hint \(hintLevel+2)").foregroundColor(.white)
-            }.font(.subheadline).padding(.horizontal, 16).padding(.vertical, 10).background(
-              Color.yellow.opacity(0.15)
-            ).cornerRadius(8)
-          }
-        }
-        Spacer()
-      }.padding()
-    }.background(EC.bg)
-  }
-  var fridaView: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
-        Text("Frida Script").font(.title2).fontWeight(.bold).foregroundColor(.white)
-        Text(challenge.fridaSnippet).font(.system(size: 10, design: .monospaced)).foregroundColor(
-          .white
-        ).padding(12).frame(maxWidth: .infinity, alignment: .leading).background(
-          Color.black.opacity(0.5)
-        ).cornerRadius(10).overlay(
-          RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.1)))
-        Text("Usage").font(.headline).foregroundColor(.white).padding(.top)
-        HStack(alignment: .top, spacing: 6) {
-          Text("·").foregroundColor(.white)
-          Text("frida -U -l bypass.js com.evilcorp.ios").font(.subheadline).foregroundColor(.gray)
-        }
-        Spacer()
-      }.padding()
-    }.background(EC.bg)
-  }
-}
-
 struct HomeTabView: View {
   @Binding var selectedChallenge: EvilCorpChallenge?
   @ObservedObject var progress: ChallengeProgress
   @State private var showAll = false
+
+  /// Five unsolved challenges that rotate once per day. The selection is deterministic, so the
+  /// carousel no longer reshuffles every time the view re-renders.
+  private var featured: [EvilCorpChallenge] {
+    let unsolved = EvilCorpChallenge.all.filter { !progress.isCompleted($0.id) }
+    let pool = unsolved.isEmpty ? EvilCorpChallenge.all : unsolved
+    guard !pool.isEmpty else { return [] }
+    let day = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0
+    let start = day % pool.count
+    return (0..<min(5, pool.count)).map { pool[(start + $0) % pool.count] }
+  }
+
   var body: some View {
     ScrollView {
       VStack(spacing: 16) {
@@ -364,8 +313,7 @@ struct HomeTabView: View {
         }
         if !progress.ctfMode {
           Button {
-            progress.resetCTF()
-            progress.ctfMode = true
+            withAnimation { progress.startCTF() }
           } label: {
             HStack {
               Image(systemName: "flag.fill")
@@ -379,7 +327,7 @@ struct HomeTabView: View {
           Text("Featured").font(.title3).fontWeight(.bold).foregroundColor(.white)
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-              ForEach(EvilCorpChallenge.all.shuffled().prefix(5)) { ch in
+              ForEach(featured) { ch in
                 FeaturedCardView(challenge: ch, completed: progress.isCompleted(ch.id)) {
                   withAnimation { selectedChallenge = ch }
                 }
@@ -532,9 +480,9 @@ struct ConsoleTabView: View {
   @ObservedObject var log: LogStore
   @State private var auto = true
   @State private var filter = ""
-  var filtered: [String] {
+  var filtered: [LogEntry] {
     filter.isEmpty
-      ? log.entries : log.entries.filter { $0.localizedCaseInsensitiveContains(filter) }
+      ? log.entries : log.entries.filter { $0.message.localizedCaseInsensitiveContains(filter) }
   }
   var body: some View {
     VStack(spacing: 0) {
@@ -548,7 +496,7 @@ struct ConsoleTabView: View {
             auto ? .green : .gray)
         }
         Button {
-          log.entries = []
+          log.clear()
         } label: {
           Image(systemName: "trash").foregroundColor(.red)
         }
@@ -571,17 +519,18 @@ struct ConsoleTabView: View {
             if filtered.isEmpty && !log.entries.isEmpty {
               Text("No matches").foregroundColor(.gray).padding()
             }
-            ForEach(Array(filtered.enumerated()), id: \.offset) { _, e in
-              Text(e).font(.system(size: 9, design: .monospaced)).foregroundColor(
-                e.contains("ERROR") ? .red : e.contains("TEST") ? .green : .white.opacity(0.7)
-              ).id(e)
+            ForEach(filtered) { entry in
+              Text(entry.message).font(.system(size: 9, design: .monospaced)).foregroundColor(
+                entry.message.contains("ERROR")
+                  ? .red : entry.message.contains("TEST") ? .green : .white.opacity(0.7)
+              ).id(entry.id)
             }
             if log.entries.isEmpty {
               Text("Tap Test Log to start").foregroundColor(.gray).padding().font(.caption)
             }
           }.padding(8)
         }.onChange(of: log.entries.count) { _ in
-          if auto, let last = log.entries.last { proxy.scrollTo(last, anchor: .bottom) }
+          if auto, let last = filtered.last { proxy.scrollTo(last.id, anchor: .bottom) }
         }
       }
     }.background(EC.bg)
@@ -592,6 +541,12 @@ struct ProgressTabView: View {
   @ObservedObject var progress: ChallengeProgress
   @State private var ring: CGFloat = 0
   let cats = ["Storage", "Network", "Crypto", "Auth"]
+
+  private var completionRatio: CGFloat {
+    guard AppMetadata.challengeCount > 0 else { return 0 }
+    return CGFloat(progress.completed.count) / CGFloat(AppMetadata.challengeCount)
+  }
+
   var body: some View {
     ScrollView {
       VStack(spacing: 20) {
@@ -608,17 +563,14 @@ struct ProgressTabView: View {
               .foregroundColor(.white)
             Text("of \(AppMetadata.challengeCount)").font(.caption).foregroundColor(.gray)
           }
-        }.onAppear {
-          ring = CGFloat(progress.completed.count) / CGFloat(AppMetadata.challengeCount)
         }
+        .onAppear { ring = completionRatio }
+        .onChange(of: progress.completed.count) { _ in ring = completionRatio }
         HStack(spacing: 20) {
           StatPillView("checkmark.circle.fill", "\(progress.completed.count)", "Completed", .green)
           StatPillView(
             "clock.fill", "\(AppMetadata.challengeCount-progress.completed.count)", "Left", .orange)
-          StatPillView(
-            "percent",
-            "\(Int(Double(progress.completed.count)/Double(AppMetadata.challengeCount)*100))%",
-            "Score", .white)
+          StatPillView("percent", "\(Int(completionRatio * 100))%", "Score", .white)
         }
         if progress.ctfMode { CTFStatsView(progress: progress) }
         // Achievements

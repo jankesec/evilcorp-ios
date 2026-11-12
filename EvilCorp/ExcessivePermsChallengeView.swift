@@ -11,6 +11,7 @@ struct ExcessivePermsChallengeView: View {
   @State private var photosStatus = "?"
   @State private var locationStatus = "?"
   @State private var output = ""
+  @State private var locationManager = CLLocationManager()
 
   var body: some View {
     ScrollView {
@@ -110,36 +111,63 @@ struct ExcessivePermsChallengeView: View {
       if ok { dumpContacts() }
       DispatchQueue.main.async { refreshStatuses() }
     }
-    PHPhotoLibrary.requestAuthorization { _ in DispatchQueue.main.async { refreshStatuses() } }
-    let lm = CLLocationManager()
-    lm.requestAlwaysAuthorization()
+    PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in
+      DispatchQueue.main.async { refreshStatuses() }
+    }
+    // The manager must outlive this call, otherwise iOS drops the authorization request.
+    locationManager.requestAlwaysAuthorization()
     DispatchQueue.main.asyncAfter(deadline: .now() + 1) { refreshStatuses() }
     output =
-      "[+] All 5 permissions requested\n[+] Contacts dumped via NSLog\n[+] Location tracking started\n[!] Check idevicesyslog | grep CONTACT_DUMP"
+      "[+] All 5 permissions requested at once\n[+] Contacts enumerated after grant (masked in the log)\n[+] Always-on location requested\n[!] Check idevicesyslog | grep CONTACT_DUMP"
   }
 
+  /// Demonstrates silent contact harvesting. Lab safety: the real name and number of a person in
+  /// the address book are never written to the system log, only masked placeholders.
   func dumpContacts() {
     let store = CNContactStore()
     let keys =
       [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey] as [CNKeyDescriptor]
     let req = CNContactFetchRequest(keysToFetch: keys)
+    var count = 0
     try? store.enumerateContacts(with: req) { contact, _ in
-      let name = "\(contact.givenName) \(contact.familyName)"
-      let phone = contact.phoneNumbers.first?.value.stringValue ?? "N/A"
-      NSLog("[CONTACT_DUMP] %@ | Phone: %@", name, phone)
+      count += 1
+      let initials = [contact.givenName, contact.familyName].compactMap(\.first).map(String.init)
+        .joined()
+      let digits = contact.phoneNumbers.first?.value.stringValue.filter(\.isNumber) ?? ""
+      let maskedPhone = digits.isEmpty ? "N/A" : "•••" + String(digits.suffix(2))
+      NSLog("[CONTACT_DUMP] #%d %@ | Phone: %@", count, initials.isEmpty ? "?" : initials, maskedPhone)
     }
+    NSLog("[CONTACT_DUMP] %d contacts enumerated", count)
   }
 
   func refreshStatuses() {
-    cameraStatus =
-      AVCaptureDevice.authorizationStatus(for: .video) == .authorized ? "Granted" : "Denied"
-    micStatus =
-      AVCaptureDevice.authorizationStatus(for: .audio) == .authorized ? "Granted" : "Denied"
-    contactsStatus =
-      CNContactStore.authorizationStatus(for: .contacts) == .authorized ? "Granted" : "Denied"
-    photosStatus = PHPhotoLibrary.authorizationStatus() == .authorized ? "Granted" : "Denied"
-    locationStatus =
-      CLLocationManager().authorizationStatus == .authorizedAlways ? "Granted" : "Denied"
+    cameraStatus = Self.describe(AVCaptureDevice.authorizationStatus(for: .video))
+    micStatus = Self.describe(AVCaptureDevice.authorizationStatus(for: .audio))
+    switch CNContactStore.authorizationStatus(for: .contacts) {
+    case .notDetermined: contactsStatus = "Not asked"
+    case .denied, .restricted: contactsStatus = "Denied"
+    default: contactsStatus = "Granted"
+    }
+    switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
+    case .notDetermined: photosStatus = "Not asked"
+    case .authorized: photosStatus = "Granted"
+    case .limited: photosStatus = "Limited"
+    default: photosStatus = "Denied"
+    }
+    switch locationManager.authorizationStatus {
+    case .notDetermined: locationStatus = "Not asked"
+    case .authorizedAlways: locationStatus = "Always"
+    case .authorizedWhenInUse: locationStatus = "When in use"
+    default: locationStatus = "Denied"
+    }
+  }
+
+  private static func describe(_ status: AVAuthorizationStatus) -> String {
+    switch status {
+    case .notDetermined: return "Not asked"
+    case .authorized: return "Granted"
+    default: return "Denied"
+    }
   }
 }
 
