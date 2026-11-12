@@ -82,13 +82,18 @@ struct DeviceInfoView: View {
     result.append(("Bundle ID", "com.evilcorp.ios"))
 
     info = result
-    EvilCorpNSLog(
-      "[DEVICE] Info collected: iOS \(device.systemVersion), JB: \(isJB), PID: \(getpid())")
+    EvilCorpLog("[DEVICE] Info collected: iOS \(device.systemVersion), JB: \(isJB), PID: \(getpid())")
   }
 }
 
-func EvilCorpNSLog(_ format: String, _ args: CVarArg...) {
-  let msg = String(format: format, arguments: args)
-  NSLog("%@", msg)
-  LogStore.shared.append(msg)
+/// Writes a finished message to the system log and the in-app console. The message is always
+/// passed as an argument, never as the format string, so user-controlled text cannot crash it.
+func EvilCorpLog(_ message: String) {
+  NSLog("%@", message)
+  LogStore.shared.append(message)
+}
+
+/// Format-string convenience for call sites with a literal format.
+func EvilCorpNSLog(_ format: StaticString, _ args: CVarArg...) {
+  EvilCorpLog(String(format: "\(format)", arguments: args))
 }

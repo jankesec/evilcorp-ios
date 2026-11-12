@@ -27,3 +27,5 @@ jobs:
         run: make typecheck
       - name: Compile app and tests for iOS Simulator
         run: make test-build
+      - name: Run unit tests on an iOS Simulator
+        run: make test

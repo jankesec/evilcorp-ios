@@ -26,7 +26,9 @@ struct SQLiteChallengeView: View {
   func login() {
     if db == nil { setupDB() }
     let query = "SELECT * FROM users WHERE username = '\(username)' AND password = '\(password)'"
-    NSLog("[SQL] \(query)")
+    // The query itself stays injectable for the lab, but it must never become the log format
+    // string: input such as "%@" would make NSLog read arbitrary memory and crash the app.
+    NSLog("[SQL] %@", query)
     var stmt: OpaquePointer?
     if sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK {
       if sqlite3_step(stmt) == SQLITE_ROW {

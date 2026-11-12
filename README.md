@@ -98,11 +98,15 @@ make check
 ```
 
 This type-checks every Swift source and compiles both the app and unit-test bundle for a
-generic iOS Simulator destination. To run tests on an installed simulator:
+generic iOS Simulator destination. To run the unit tests:
 
 ```bash
-make test DESTINATION='platform=iOS Simulator,name=iPhone 16 Pro'
+make test
 ```
+
+`make test` picks the first available iPhone simulator. Pass
+`DESTINATION='platform=iOS Simulator,name=<device>'` to choose a specific one. If no simulator
+is installed, run `xcodebuild -downloadPlatform iOS` first.
 
 ## Releases
 
@@ -186,7 +190,7 @@ training boundary.
 ```text
 .
 ├── EvilCorp/                 SwiftUI application and challenge views
-├── EvilCorpTests/            Catalog and scoring invariants
+├── EvilCorpTests/            Catalog, progress, and CTF scoring tests
 ├── EvilCorp.xcodeproj/       Generated, ready-to-open Xcode project
 ├── screenshots/              Repository-owned product screenshots
 ├── project.yml               XcodeGen source of truth
@@ -194,7 +198,7 @@ training boundary.
 ├── CHANGELOG.md              User-visible project history
 ├── CONTRIBUTING.md           Contribution and lab-boundary guidance
 ├── SECURITY.md               Security reporting scope
-└── .github/workflows/ci.yml  macOS/iOS Simulator verification
+└── .github/workflows/ci.yml  macOS build and iOS Simulator unit tests
 ```
 
 ## Responsible use
